@@ -70,6 +70,20 @@
       display: flex;
       gap: 10px; /* ボタン間のスペース */
     }
+    .info-section {
+      margin-top: 20px;
+      padding-top: 10px;
+      border-top: 1px solid #ccc;
+      font-size: 12px;
+      color: #666;
+    }
+    .info-section a {
+        color: #007bff;
+        text-decoration: none;
+    }
+    .info-section a:hover {
+        text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -104,6 +118,15 @@
   </div>
 
   <button id="save-button">保存して閉じる</button>
+
+  <div class="info-section">
+    <p>
+      ご意見・ご要望は<a href="https://docs.google.com/forms/d/e/1FAIpQLSdxCMzlN0ArQhYDqX1Sig_DYFGgTMUPQYZxtKq9_O5lBTM3iQ/viewform?usp=sharing&ouid=110726981741186857367" target="_blank">こちらのフォーム</a>からお寄せください。
+    </p>
+    <p>
+      再度この設定画面を開くには、拡張機能アイコンを右クリックして「オプション」を選択してください。
+    </p>
+  </div>
 
   <script src="popup.js"></script>
 </body>
