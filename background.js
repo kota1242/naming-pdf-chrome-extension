@@ -2,7 +2,6 @@
 
 // --- 定数定義 ---
 // APIキーはchrome.storage.localから取得するように変更
-// const apiKey = 'AIzaSyANyTe-i94k13onqPUlSuzcYBGiQMDnOFs';
 
 // systemPromptはchrome.storage.localから取得するように変更
 // const systemPrompt = `
