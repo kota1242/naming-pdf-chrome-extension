@@ -1,0 +1,124 @@
+{
+  "extensionName": {
+    "message": "PDF Naming Assistant",
+    "description": "The name of the extension."
+  },
+  "extensionDescription": {
+    "message": "Analyzes the text of the currently displayed PDF paper using AI, automatically generating the optimal filename in 'Author_Year_Title.pdf' format for you to download.",
+    "description": "The description of the extension."
+  },
+  "popupTitle": {
+    "message": "PDF Naming Assistant - Settings"
+  },
+  "popupHeader": {
+    "message": "PDF Naming Assistant Settings"
+  },
+  "apiKeyLabel": {
+    "message": "Gemini API Key:"
+  },
+  "apiKeyPlaceholder": {
+    "message": "Paste your API key here"
+  },
+  "pageCountLabel": {
+    "message": "PDF pages to load:"
+  },
+  "pageCountDescription": {
+    "message": "Specify how many pages of the paper to analyze, starting from the first page."
+  },
+  "systemPromptLabel": {
+    "message": "System Prompt (Editable):"
+  },
+  "systemPrompt": {
+    "message": "You are an expert in generating filenames from academic paper text, strictly following the specified format.\n\n## Input\nThe text in the code block below is the content extracted from a PDF paper.\n\n## Output Format\nYou must output **only the filename, without the file extension,** and nothing else. Do not include any additional explanations or text.\nThe filename must follow one of these formats (without the .pdf extension):\n- If there are 2 or more authors: \"{FirstAuthorLastName}_{SecondAuthorLastName}_{Year}_{Title}\"\n- If there is only 1 author: \"{FirstAuthorLastName}_{Year}_{Title}\"\n\n## Extraction Rules and Priorities\n1.  **\"FirstAuthorLastName\", \"SecondAuthorLastName\"**\n    -   Identify the author names from the input text. Extract the first one or two authors listed.\n    -   From the extracted names, determine the \"last name\". The method for identifying the last name is at the AI's discretion.\n    -   If no authors can be identified, use \"Unknown\" for this part.\n2.  **\"Year\"**\n    -   Extract a 4-digit number (e.g., 2023) from the input text and use it as the publication year.\n    -   If the publication year cannot be identified, use \"Unknown\" for this part.\n3.  **\"Title\"**\n    -   Identify the paper's title from the input text.\n    -   **Japanese Title**: Use the extracted title as is.\n    -   **English Title**:\n        -   If the title is determined to be in English, convert it to PascalCase (CamelCase with the first letter capitalized).\n        -   Remove all spaces and capitalize the first letter of each word.\n        -   Remove all symbols such as hyphens (-), colons (:), and commas (,).\n    -   The determination of whether the title is Japanese or English is at the AI's discretion.\n    -   If the title cannot be identified, use \"Unknown\" for this part.\n---"
+  },
+  "systemPromptDescription": {
+    "message": "Instructions for the AI. You can freely modify the filename rules and other settings."
+  },
+  "saveButtonText": {
+    "message": "Save Settings"
+  },
+  "editButtonText": {
+    "message": "Edit"
+  },
+  "resetButtonText": {
+    "message": "Reset to Default"
+  },
+  "feedbackLinkText": {
+    "message": "this form"
+  },
+  "feedbackTextPrefix": {
+    "message": "Please send feedback and suggestions using "
+  },
+  "feedbackTextSuffix": {
+    "message": "."
+  },
+  "optionsPageInstruction": {
+    "message": "To open this settings page again, right-click the extension icon and select \"Options\"."
+  },
+  "statusApiKeyMissing": {
+    "message": "API key is not configured. Please save your key."
+  },
+  "statusSettingsSaved": {
+    "message": "Settings saved successfully."
+  },
+  "statusSaveFailed": {
+    "message": "Failed to save settings."
+  },
+  "errorApiKeyRequired": {
+    "message": "API key is required."
+  },
+  "errorInvalidPageCount": {
+    "message": "Page count must be 1 or greater."
+  },
+  "notificationProcessingTitle": {
+    "message": "Processing PDF"
+  },
+  "notificationProcessingMessage": {
+    "message": "Starting PDF text extraction and filename generation..."
+  },
+  "notificationApiKeyRequiredTitle": {
+    "message": "API Key Required"
+  },
+  "notificationApiKeyRequiredMessage": {
+    "message": "To use this extension, please configure your API key first. Opening options page."
+  },
+  "notificationDownloadFailedTitle": {
+    "message": "Download Failed"
+  },
+  "notificationDownloadFailedMessage": {
+    "message": "Failed to download the file. ($1)",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "Network error."
+      }
+    }
+  },
+  "notificationGenericErrorTitle": {
+    "message": "An Error Occurred"
+  },
+  "notificationPdfNotFoundTitle": {
+    "message": "PDF Not Found"
+  },
+  "notificationPdfNotFoundMessage": {
+    "message": "It seems the current page is not a PDF file. Please open a PDF in the browser tab and try again."
+  },
+  "notificationPdfFetchFailedTitle": {
+    "message": "Download Failed"
+  },
+  "notificationPdfFetchFailedMessage": {
+    "message": "Failed to fetch the PDF file. Please reload the page and try again."
+  },
+  "notificationPdfParseErrorTitle": {
+    "message": "PDF Parse Error"
+  },
+  "notificationPdfParseErrorMessage": {
+    "message": "Failed to parse the PDF. The file may be corrupted or in an unsupported format."
+  },
+  "notificationAiErrorTitle": {
+    "message": "AI Error"
+  },
+  "notificationAiErrorMessage": {
+    "message": "Failed to generate filename. Please check your API key and network connection."
+  }
+}

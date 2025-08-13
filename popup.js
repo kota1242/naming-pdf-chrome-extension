@@ -1,43 +1,35 @@
 
 // popup.js
 
+// ページ内のテキストを国際化(i18n)対応の文言に置き換える
+function localizeHTML() {
+  // タイトル
+  document.title = chrome.i18n.getMessage('popupTitle');
+
+  // data-i18n属性を持つすべての要素を検索してテキストを設定
+  const i18nElements = document.querySelectorAll('[data-i18n]');
+  i18nElements.forEach(el => {
+    el.textContent = chrome.i18n.getMessage(el.dataset.i18n);
+  });
+
+  // プレースホルダーなど、属性値を設定
+  document.getElementById('api-key-input').placeholder = chrome.i18n.getMessage('apiKeyPlaceholder');
+
+  // HTMLを含む可能性のある要素（リンクなど）
+  const feedbackElement = document.querySelector('[data-i18n-html="feedbackText"]');
+  if (feedbackElement) {
+    const prefix = chrome.i18n.getMessage('feedbackTextPrefix');
+    const linkText = chrome.i18n.getMessage('feedbackLinkText');
+    const suffix = chrome.i18n.getMessage('feedbackTextSuffix');
+    feedbackElement.innerHTML = `${prefix}<a href="https://docs.google.com/forms/d/e/1FAIpQLSdxCMzlN0ArQhYDqX1Sig_DYFGgTMUPQYZxtKq9_O5lBTM3iQ/viewform?usp=sharing&ouid=110726981741186857367" target="_blank">${linkText}</a>${suffix}`;
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  // まずページ全体の文言をローカライズ
+  localizeHTML();
 
   // --- 定数定義 ---
-  const DEFAULT_SYSTEM_PROMPT = `あなたは、与えられた論文のテキスト情報から、指定されたフォーマットに従ってファイル名を生成する専門家です。
-
-## 入力
-以降に続くコードブロック内のテキストが、PDFから抽出された論文の文字情報です。
-
-## 出力フォーマット
-出力は**ファイル名のみ**で、余分な説明やテキストは一切含めないでください。
-
-ファイル名のフォーマットは以下のいずれかに従ってください。
-- 著者が2人以上の場合: "{第一著者の名字}"_"{第二著者の名字}"_"{刊行年}"_"{タイトル}".pdf
-- 著者が1人の場合: "{第一著者の名字}"_"{刊行年}"_"{タイトル}".pdf
-
-## 各要素の抽出ルールと優先順位
-
-1.  **"第一著者の名字"、"第二著者の名字"**
-    *   入力テキストから著者名を特定し、テキストに最初に登場する1人または2人の著者名を抽出してください。
-    *   抽出された著者名から「名字」を特定してください。名字の特定の具体的なルールはAIの判断に委ねます。
-    *   著者が特定できない場合は、その要素を"不明"としてください。
-
-2.  **"刊行年"**
-    *   入力テキストから西暦4桁の数字（例: 2023）を刊行年として抽出してください。
-    *   刊行年が特定できない場合は、その要素を"不明"としてください。
-
-3.  **"タイトル"**
-    *   入力テキストから論文のタイトルを特定してください。
-    *   **日本語タイトル**: 抽出したタイトル全文をそのまま使用してください。
-    *   **英語タイトル**:
-        *   タイトルが英語であると判断した場合、CamelCase（またはPascalCase）形式に変換してください。
-        *   半角スペースは全て削除し、各単語の先頭を大文字にしてください。
-        *   ハイフン (-)、コロン (:), カンマ (,) などの記号は全て削除してください。
-    *   日本語か英語かの判断はAIの判断に委ねます。
-    *   タイトルが特定できない場合は、その要素を"不明"としてください。
-
----`;
 
   // --- HTML要素の取得 ---
   const messageArea = document.getElementById('message-area');
@@ -77,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
       apiKeyInput.value = result.userApiKey || '';
       pdfPageCountInput.value = result.pdfPageCount !== undefined ? result.pdfPageCount : 1;
       
-      const currentPrompt = result.systemPrompt || DEFAULT_SYSTEM_PROMPT;
+      const currentPrompt = result.systemPrompt || chrome.i18n.getMessage('systemPrompt');
       setDisplayMode(currentPrompt);
     });
   }
@@ -92,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 「デフォルトに戻す」ボタンのクリック処理
   resetPromptButton.addEventListener('click', () => {
-    systemPromptInput.value = DEFAULT_SYSTEM_PROMPT;
+    systemPromptInput.value = chrome.i18n.getMessage('systemPrompt');
   });
 
   // 「保存して閉じる」ボタンのクリック処理
@@ -102,13 +94,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const pdfPageCount = parseInt(pdfPageCountInput.value, 10);
 
     if (!apiKey) {
-      messageArea.textContent = 'APIキーは必須です。';
+      messageArea.textContent = chrome.i18n.getMessage('errorApiKeyRequired');
       messageArea.style.display = 'block';
       return;
     }
     
     if (isNaN(pdfPageCount) || pdfPageCount < 1) {
-      messageArea.textContent = 'PDF読み込みページ数は1以上の数値を入力してください。';
+      messageArea.textContent = chrome.i18n.getMessage('errorInvalidPageCount');
       messageArea.style.display = 'block';
       return;
     }
@@ -136,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const urlParams = new URLSearchParams(window.location.search);
   const reason = urlParams.get('reason');
   if (reason === 'no_api_key') {
-    messageArea.textContent = 'APIキーが設定されていません。キーを保存してください。';
+    messageArea.textContent = chrome.i18n.getMessage('statusApiKeyMissing');
     messageArea.style.display = 'block';
   }
 

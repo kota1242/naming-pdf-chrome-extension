@@ -1,0 +1,124 @@
+{
+  "extensionName": {
+    "message": "PDF Naming Assistant",
+    "description": "The name of the extension."
+  },
+  "extensionDescription": {
+    "message": "表示中のPDF論文のテキストをAIで解析し、「著者名_発行年_タイトル.pdf」形式の最適なファイル名を自動生成してダウンロードします。",
+    "description": "The description of the extension."
+  },
+  "popupTitle": {
+    "message": "PDF Naming Assistant - 設定"
+  },
+  "popupHeader": {
+    "message": "PDF Naming Assistant 設定"
+  },
+  "apiKeyLabel": {
+    "message": "Gemini APIキー:"
+  },
+  "apiKeyPlaceholder": {
+    "message": "ここにAPIキーを貼り付けます"
+  },
+  "pageCountLabel": {
+    "message": "PDFの読み込みページ数:"
+  },
+  "pageCountDescription": {
+    "message": "論文の最初から何ページ分のテキストをAIに読み込ませるかを指定します。"
+  },
+  "systemPromptLabel": {
+    "message": "システムプロンプト (編集可):"
+  },
+  "systemPrompt": {
+    "message": "あなたは、与えられた論文のテキスト情報から、指定されたフォーマットに従ってファイル名を生成する専門家です。\n\n## 入力\n以降に続くコードブロック内のテキストが、PDFから抽出された論文の文字情報です。\n\n## 出力フォーマット\n出力は**ファイル名のみ**で、余分な説明やテキストは一切含めないでください。\nファイル名のフォーマットは以下のいずれかに従ってください。\n- 著者が2人以上の場合: \"{第一著者の名字}\"_\"{第二著者の名字}\"_\"{刊行年}\"_\"{タイトル}\".pdf\n- 著者が1人の場合: \"{第一著者の名字}\"_\"{刊行年}\"_\"{タイトル}\".pdf\n\n## 各要素の抽出ルールと優先順位\n1. **\"第一著者の名字\"、\"第二著者の名字\"**\n   - 入力テキストから著者名を特定し、テキストに最初に登場する1人または2人の著者名を抽出してください。\n   - 抽出された著者名から「名字」を特定してください。名字の特定の具体的なルールはAIの判断に委ねます。\n   - 著者が特定できない場合は、その要素を\"不明\"としてください。\n2. **\"刊行年\"**\n   - 入力テキストから西暦4桁の数字（例: 2023）を刊行年として抽出してください。\n   - 刊行年が特定できない場合は、その要素を\"不明\"としてください。\n3. **\"タイトル\"**\n   - 入力テキストから論文のタイトルを特定してください。\n   - **日本語タイトル**: 抽出したタイトル全文をそのまま使用してください。\n   - **英語タイトル**:\n     - タイトルが英語であると判断した場合、CamelCase（またはPascalCase）形式に変換してください。\n     - 半角スペースは全て削除し、各単語の先頭を大文字にしてください。\n     - ハイフン (-)、コロン (:), カンマ (,) などの記号は全て削除してください。\n   - 日本語か英語かの判断はAIの判断に委ねます。\n   - タイトルが特定できない場合は、その要素を\"不明\"としてください。\n---\n"
+  },
+  "systemPromptDescription": {
+    "message": "AIへの指示内容です。ファイル名のルールなどを自由に変更できます。"
+  },
+  "saveButtonText": {
+    "message": "設定を保存"
+  },
+  "editButtonText": {
+    "message": "編集"
+  },
+  "resetButtonText": {
+    "message": "デフォルトに戻す"
+  },
+  "feedbackLinkText": {
+    "message": "こちらのフォーム"
+  },
+  "feedbackTextPrefix": {
+    "message": "ご意見・ご要望は"
+  },
+  "feedbackTextSuffix": {
+    "message": "からお寄せください。"
+  },
+  "optionsPageInstruction": {
+    "message": "再度この設定画面を開くには、拡張機能アイコンを右クリックして「オプション」を選択してください。"
+  },
+  "statusApiKeyMissing": {
+    "message": "APIキーが設定されていません。キーを保存してください。"
+  },
+  "statusSettingsSaved": {
+    "message": "設定を保存しました。"
+  },
+  "statusSaveFailed": {
+    "message": "設定の保存に失敗しました。"
+  },
+  "errorApiKeyRequired": {
+    "message": "APIキーは必須です。"
+  },
+  "errorInvalidPageCount": {
+    "message": "PDF読み込みページ数は1以上の数値を入力してください。"
+  },
+  "notificationProcessingTitle": {
+    "message": "PDF処理中"
+  },
+  "notificationProcessingMessage": {
+    "message": "PDFのテキスト抽出とファイル名生成を開始します..."
+  },
+  "notificationApiKeyRequiredTitle": {
+    "message": "APIキーが必要です"
+  },
+  "notificationApiKeyRequiredMessage": {
+    "message": "拡張機能を使用するには、まずAPIキーを設定してください。オプションページを開きます。"
+  },
+  "notificationDownloadFailedTitle": {
+    "message": "ダウンロード失敗"
+  },
+  "notificationDownloadFailedMessage": {
+    "message": "ファイルのダウンロードに失敗しました。($1)",
+    "placeholders": {
+      "1": {
+        "content": "$1",
+        "example": "Network error."
+      }
+    }
+  },
+  "notificationGenericErrorTitle": {
+    "message": "エラーが発生しました"
+  },
+  "notificationPdfNotFoundTitle": {
+    "message": "PDFが見つかりません"
+  },
+  "notificationPdfNotFoundMessage": {
+    "message": "現在のページはPDFファイルではないようです。PDFを直接表示してから再度お試しください。"
+  },
+  "notificationPdfFetchFailedTitle": {
+    "message": "ダウンロード失敗"
+  },
+  "notificationPdfFetchFailedMessage": {
+    "message": "PDFファイルの取得に失敗しました。ページを再読み込みしてお試しください。"
+  },
+  "notificationPdfParseErrorTitle": {
+    "message": "PDF解析エラー"
+  },
+  "notificationPdfParseErrorMessage": {
+    "message": "PDFの解析に失敗しました。ファイルが破損しているか、対応していない形式の可能性があります。"
+  },
+  "notificationAiErrorTitle": {
+    "message": "AIエラー"
+  },
+  "notificationAiErrorMessage": {
+    "message": "ファイル名の生成に失敗しました。APIキーやネットワーク接続を確認してください。"
+  }
+}

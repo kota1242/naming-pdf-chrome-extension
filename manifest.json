@@ -1,9 +1,16 @@
 {
   "manifest_version": 3,
-  "name": "PDF Naming Assistant",
+  "name": "__MSG_extensionName__",
   "version": "1.0.0",
-  "description": "表示中のPDF論文のテキストをAIで解析し、「著者名_発行年_タイトル.pdf」形式の最適なファイル名を自動生成してダウンロードします。",
+  "description": "__MSG_extensionDescription__",
+  "default_locale": "ja",
   "author": "Kota MIYAKE",
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
   "permissions": [
     "downloads",
     "activeTab",
@@ -34,9 +41,11 @@
       "resources": [
         "pdfjs-dist/build/pdf.mjs",
         "pdfjs-dist/build/pdf.worker.mjs",
+        "pdfjs-dist/build/pdf.sandbox.mjs",
         "offscreen.html",
         "offscreen.js",
-        "icon128.png"
+        "icon128.png",
+        "pdfjs-dist/cmaps/*.bcmap"
       ],
       "matches": [
         "<all_urls>"

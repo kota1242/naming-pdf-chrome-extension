@@ -1,17 +1,13 @@
 // background.js
 
 // --- 定数定義 ---
-// APIキーはchrome.storage.localから取得するように変更
+// --- 定数定義 ---
 
-// systemPromptはchrome.storage.localから取得するように変更
-// const systemPrompt = `
-// あなたは、与えられた論文のテキスト情報から、指定されたフォーマットに従ってファイル名を生成する専門家です。
-// ... (rest of the original prompt) ...
-// `;
 
 const OFFSCREEN_DOCUMENT_PATH = '/offscreen.html';
 
 // --- Offscreen Document 管理 ---
+
 let creating;
 async function hasOffscreenDocument() {
   const matchedClients = await clients.matchAll();
@@ -39,11 +35,16 @@ async function setupOffscreenDocument() {
 
 // --- メイン機能 ---
 
-async function testGeminiAPI(prompt, apiKey) {
+async function testGeminiAPI(systemPrompt, userPrompt, apiKey) {
   try {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
     const requestData = {
-      contents: [{ parts: [{ text: prompt }] }]
+      systemInstruction: {
+        parts: [{ text: systemPrompt }]
+      },
+      contents: [{
+        parts: [{ text: userPrompt }]
+      }]
     };
     const response = await fetch(url, {
       method: 'POST',
@@ -52,12 +53,11 @@ async function testGeminiAPI(prompt, apiKey) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'JSON形式のエラー情報がありませんでした。' }));
-      console.error('APIからのエラー応答:', {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorData
-      });
+      const errorData = await response.json().catch(() => ({ message: 'レスポンスがJSON形式ではありませんでした。' }));
+      
+      // APIから返されたエラーオブジェクトを、整形された読みやすいテキスト形式でコンソールに出力します。
+      console.error('APIからの詳細なエラー応答:', JSON.stringify(errorData, null, 2));
+      
       throw new Error(`APIエラー: HTTPステータス ${response.status}`);
     }
     
@@ -77,23 +77,73 @@ async function testGeminiAPI(prompt, apiKey) {
   }
 }
 
-async function getPdfText(url, pageCount) {
+// Base64エンコード用のヘルパー関数
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+async function getPdfText(pdfData, pageCount) {
   await setupOffscreenDocument();
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       reject(new Error('PDFテキスト抽出がタイムアウトしました。'));
     }, 30000);
     const listener = (message) => {
-      clearTimeout(timeout);
-      chrome.runtime.onMessage.removeListener(listener);
-      if (message.type === 'pdf-text-extracted') {
-        resolve(message.text);
-      } else if (message.type === 'pdf-text-error') {
-        reject(new Error('Offscreen DocumentでのPDF解析に失敗: ' + message.error));
+      // リスナーは一度しか使わないので、タイプをチェックしてすぐに削除
+      if (message.type === 'pdf-text-extracted' || message.type === 'pdf-text-error' || message.type === 'offscreen-error') {
+        clearTimeout(timeout);
+        chrome.runtime.onMessage.removeListener(listener);
+        if (message.type === 'pdf-text-extracted') {
+          resolve(message.text);
+        } else if (message.type === 'pdf-text-error') {
+          reject(new Error('Offscreen DocumentでのPDF解析に失敗: ' + message.error));
+        } else { // offscreen-error
+          console.error('Offscreen ドキュメント実行時エラー:', message);
+          reject(new Error(`Offscreen 実行エラー: ${message.error || '詳細不明'}`));
+        }
       }
     };
     chrome.runtime.onMessage.addListener(listener);
-    chrome.runtime.sendMessage({ type: 'extract-pdf-text', url: url });
+
+    // ArrayBufferをBase64文字列に変換して送信
+    const base64PdfData = arrayBufferToBase64(pdfData);
+    chrome.runtime.sendMessage({ type: 'extract-pdf-text', base64PdfData: base64PdfData, pageCount });
+  });
+}
+
+// Offscreen からのログを背景側に転送して見える化
+chrome.runtime.onMessage.addListener((message) => {
+  if (message && message.type === 'offscreen-log') {
+    try {
+      console.error('[offscreen]', ...(Array.isArray(message.args) ? message.args : [message.args]));
+    } catch (_) {
+      // どうしても展開できない場合はそのまま出力
+      console.error('[offscreen]', message);
+    }
+  }
+});
+
+// 通知表示とロギングのためのヘルパー関数
+function showNotification(title, message, priority = 0) {
+  const notificationId = `pdf-namer-notification-${Date.now()}`;
+  chrome.notifications.create(notificationId, {
+    type: 'basic',
+    iconUrl: '/icon128.png',
+    title: title,
+    message: message,
+    priority: priority
+  }, (createdId) => {
+    if (chrome.runtime.lastError) {
+      console.error(`通知の作成に失敗しました: ${chrome.runtime.lastError.message}`, {id: createdId});
+    } else {
+      console.log(`通知を作成しました: ${createdId}`);
+    }
   });
 }
 
@@ -111,82 +161,71 @@ chrome.action.onClicked.addListener(async (tab) => {
   chrome.action.setBadgeBackgroundColor({ color: '#FFA500' }); // オレンジ
 
   // 処理開始の通知
-  chrome.notifications.create({
-    type: 'basic',
-    iconUrl: '/icon128.png',
-    title: 'PDF処理中',
-    message: 'PDFのテキスト抽出とファイル名生成を開始します...',
-    priority: 0
-  });
-  console.log('「PDF処理中」通知作成を試みました。');
+  showNotification(
+    chrome.i18n.getMessage('notificationProcessingTitle'),
+    chrome.i18n.getMessage('notificationProcessingMessage')
+  );
 
   try {
-    // chrome.storage.localからAPIキーとsystemPromptを取得
+    // 1. APIキーと設定を取得
     const storedData = await chrome.storage.local.get(['userApiKey', 'systemPrompt', 'pdfPageCount']);
     const apiKey = storedData.userApiKey;
-    // systemPromptが設定されていない場合のデフォルト値
-    const currentSystemPrompt = storedData.systemPrompt || `
-あなたは、与えられた論文のテキスト情報から、指定されたフォーマットに従ってファイル名を生成する専門家です。
-
-## 入力
-以降に続くコードブロック内のテキストが、PDFから抽出された論文の文字情報です。
-
-## 出力フォーマット
-出力は**ファイル名のみ**で、余分な説明やテキストは一切含めないでください。
-
-ファイル名のフォーマットは以下のいずれかに従ってください。
-- 著者が2人以上の場合: "{第一著者の名字}"_"{第二著者の名字}"_"{刊行年}"_"{タイトル}".pdf
-- 著者が1人の場合: "{第一著者の名字}"_"{刊行年}"_"{タイトル}".pdf
-
-## 各要素の抽出ルールと優先順位
-
-1.  **"第一著者の名字"、"第二著者の名字"**
-    *   入力テキストから著者名を特定し、テキストに最初に登場する1人または2人の著者名を抽出してください。
-    *   抽出された著者名から「名字」を特定してください。名字の特定の具体的なルールはAIの判断に委ねます。
-    *   著者が特定できない場合は、その要素を"不明"としてください。
-
-2.  **"刊行年"**
-    *   入力テキストから西暦4桁の数字（例: 2023）を刊行年として抽出してください。
-    *   刊行年が特定できない場合は、その要素を"不明"としてください。
-
-3.  **"タイトル"**
-    *   入力テキストから論文のタイトルを特定してください。
-    *   **日本語タイトル**: 抽出したタイトル全文をそのまま使用してください。
-    *   **英語タイトル**:
-        *   タイトルが英語であると判断した場合、CamelCase（またはPascalCase）形式に変換してください。
-        *   半角スペースは全て削除し、各単語の先頭を大文字にしてください。
-        *   ハイフン (-)、コロン (:), カンマ (,) などの記号は全て削除してください。
-    *   日本語か英語かの判断はAIの判断に委ねます。
-    *   タイトルが特定できない場合は、その要素を"不明"としてください。
-
----
-`;
-
-    // pdfPageCountが設定されていない場合のデフォルト値は1
-    const pdfPageCount = storedData.pdfPageCount !== undefined ? storedData.pdfPageCount : 1; 
+    // ストレージにsystemPromptがあればそれを使用し、なければデフォルトのプロンプト（messages.jsonから取得）を使用
+    const currentSystemPrompt = storedData.systemPrompt || chrome.i18n.getMessage('systemPrompt');
+    const pdfPageCount = storedData.pdfPageCount !== undefined ? storedData.pdfPageCount : 1;
 
     if (!apiKey) {
-      console.error("APIキーが設定されていません。オプションページを開きます。");
-
-      // クエリパラメータ付きでオプションページを開く
-      const optionsUrl = chrome.runtime.getURL('popup.html');
-      chrome.tabs.create({ url: `${optionsUrl}?reason=no_api_key` });
-
-      // バッジをクリア
+      // APIキー未設定の場合、通知してオプションページを開く
+      showNotification(
+        chrome.i18n.getMessage('notificationApiKeyRequiredTitle'),
+        chrome.i18n.getMessage('notificationApiKeyRequiredMessage'),
+        2
+      );
+      chrome.tabs.create({ url: chrome.runtime.getURL('popup.html') + '?reason=no_api_key' });
+      // バッジのテキストと色を両方クリアして、処理が完了したことをユーザーに示す
       chrome.action.setBadgeText({ text: '' });
-      return; // 処理を中断
+      chrome.action.setBadgeBackgroundColor({ color: null });
+      throw new Error("APIキーが設定されていません。");
     }
 
-    const pdfText = await getPdfText(url, pdfPageCount);
-    console.log('PDFテキスト抽出成功。');
-    console.log('AIでファイル名を生成します...');
-    const prompt = currentSystemPrompt + pdfText; // <--- Use the retrieved/default systemPrompt
-    const aiGeneratedTitle = await testGeminiAPI(prompt, apiKey);
-    if (!aiGeneratedTitle || typeof aiGeneratedTitle !== 'string' || aiGeneratedTitle.trim() === '') {
-      console.error("AIによるファイル名生成に失敗、またはファイル名が空です。");
-      return;
+    // 2. PDFデータを取得・検証
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`PDFのダウンロードに失敗しました: HTTP ${response.status}`);
     }
-    const trimmedTitle = aiGeneratedTitle.trim();
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/pdf')) {
+      throw new Error('対象のURLはPDFファイルではありません。');
+    }
+    const pdfData = await response.arrayBuffer();
+    // console.log('background.js: PDFデータサイズ:', pdfData.byteLength); // デバッグ完了のためコメントアウト
+
+    // 3. OffscreenでPDFテキストを抽出
+    const pdfText = await getPdfText(pdfData, pdfPageCount);
+    console.log('AIでファイル名を生成します...');
+
+    // 4. Gemini APIでファイル名を生成
+    console.log('System Prompt:', currentSystemPrompt); // デバッグ用にシステムプロンプトをログ出力
+    console.log('User Prompt (PDF Text):', pdfText.substring(0, 500) + '...'); // デバッグ用にユーザープロンプトの一部をログ出力
+
+    // testGeminiAPI関数を正しい引数で呼び出す
+    const aiGeneratedTitle = await testGeminiAPI(currentSystemPrompt, pdfText, apiKey);
+
+    if (!aiGeneratedTitle || typeof aiGeneratedTitle !== 'string' || aiGeneratedTitle.trim() === '') {
+      throw new Error("AIによるファイル名生成に失敗、またはファイル名が空です。");
+    }
+
+    // HTMLタグを削除するヘルパー関数
+    function stripHtmlTags(str) {
+      return str.replace(/<[^>]*>/g, '');
+    }
+    const cleanedTitle = stripHtmlTags(aiGeneratedTitle);
+    if (cleanedTitle.trim() === '') {
+      throw new Error("AIによるファイル名生成に失敗、またはファイル名が空です。");
+    }
+
+    // 5. ファイルをダウンロード
+    const trimmedTitle = cleanedTitle.trim();
     const filename = trimmedTitle.endsWith('.pdf') ? trimmedTitle : `${trimmedTitle}.pdf`;
     console.log('最終的なファイル名:', filename);
     chrome.downloads.download({
@@ -196,23 +235,50 @@ chrome.action.onClicked.addListener(async (tab) => {
     }, (downloadId) => {
       if (chrome.runtime.lastError) {
         console.error("ダウンロードに失敗しました:", chrome.runtime.lastError.message);
+        // ダウンロード失敗の通知
+        showNotification(
+          chrome.i18n.getMessage('notificationDownloadFailedTitle'),
+          chrome.i18n.getMessage('notificationDownloadFailedMessage', [chrome.runtime.lastError.message]),
+          2
+        );
       } else {
         console.log("ダウンロードを開始しました。 Download ID:", downloadId);
         chrome.action.setBadgeBackgroundColor({ color: '#008000' }); // 緑色
         chrome.action.setBadgeText({ text: '完了' });
-        // 3秒後にバッジをクリア
-        setTimeout(() => {
-          chrome.action.setBadgeText({ text: '' });
-        }, 3000);
+        setTimeout(() => chrome.action.setBadgeText({ text: '' }), 3000);
       }
     });
+
   } catch (error) {
     console.error("処理に失敗しました:", error.message);
+
+    // エラー内容に応じた通知メッセージを生成
+    let notificationTitle = chrome.i18n.getMessage('notificationGenericErrorTitle');
+    let notificationMessage = error.message;
+
+    if (error.message.includes('対象のURLはPDFファイルではありません')) {
+      notificationTitle = chrome.i18n.getMessage('notificationPdfNotFoundTitle');
+      notificationMessage = chrome.i18n.getMessage('notificationPdfNotFoundMessage');
+    } else if (error.message.includes('PDFのダウンロードに失敗しました')) {
+      notificationTitle = chrome.i18n.getMessage('notificationPdfFetchFailedTitle');
+      notificationMessage = chrome.i18n.getMessage('notificationPdfFetchFailedMessage');
+    } else if (error.message.includes('Offscreen DocumentでのPDF解析に失敗')) {
+      notificationTitle = chrome.i18n.getMessage('notificationPdfParseErrorTitle');
+      notificationMessage = chrome.i18n.getMessage('notificationPdfParseErrorMessage');
+    } else if (error.message.includes('AIによるファイル名生成に失敗') || error.message.includes('APIエラー')) {
+      notificationTitle = chrome.i18n.getMessage('notificationAiErrorTitle');
+      notificationMessage = chrome.i18n.getMessage('notificationAiErrorMessage');
+    } else if (error.message.includes('APIキーが設定されていません')) {
+      // このケースはtryブロック内で既に通知済みなので、ここでは何もしない
+      return;
+    }
+
+    // 汎用エラー通知を作成
+    showNotification(notificationTitle, notificationMessage, 2);
+
+    // バッジをエラー表示に設定
     chrome.action.setBadgeBackgroundColor({ color: '#FF0000' }); // 赤色
     chrome.action.setBadgeText({ text: 'エラー' });
-    // 3秒後にバッジをクリア
-    setTimeout(() => {
-      chrome.action.setBadgeText({ text: '' });
-    }, 3000);
+    setTimeout(() => chrome.action.setBadgeText({ text: '' }), 5000); // 少し長めに表示
   }
 });
