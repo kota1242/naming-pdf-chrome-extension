@@ -4,7 +4,7 @@
     "description": "The name of the extension."
   },
   "extensionDescription": {
-    "message": "表示中のPDF論文のテキストをAIで解析し、「著者名_発行年_タイトル.pdf」形式の最適なファイル名を自動生成してダウンロードします。",
+    "message": "拡張機能のアイコンをクリックすると、表示中のPDF論文のテキストをAIで解析し、「著者名_発行年_タイトル.pdf」形式の最適なファイル名を自動生成してダウンロードします。",
     "description": "The description of the extension."
   },
   "popupTitle": {

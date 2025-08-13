@@ -4,7 +4,7 @@
     "description": "The name of the extension."
   },
   "extensionDescription": {
-    "message": "Analyzes the text of the currently displayed PDF paper using AI, automatically generating the optimal filename in 'Author_Year_Title.pdf' format for you to download.",
+    "message": "Click the extension icon to analyze the text of the currently displayed PDF paper using AI. It automatically generates the optimal filename in 'Author_Year_Title.pdf' format for you to download.",
     "description": "The description of the extension."
   },
   "popupTitle": {
