@@ -78,7 +78,6 @@ chrome.runtime.onMessage.addListener(async (message) => {
     try {
       // Base64をUint8Arrayにデコード
       const pdfData = base64ToUint8Array(base64PdfData);
-      console.log('offscreen.js: デコード後のPDFデータサイズ:', pdfData.byteLength); // ★デバッグログ
 
       const pdf = await pdfjsLib.getDocument({
         data: pdfData, // デコードしたデータを渡す

@@ -1,10 +1,9 @@
 // background.js
 
 // --- 定数定義 ---
-// --- 定数定義 ---
-
 
 const OFFSCREEN_DOCUMENT_PATH = '/offscreen.html';
+const GEMINI_MODEL = 'gemini-3.1-flash-lite-preview';
 
 // --- Offscreen Document 管理 ---
 
@@ -35,9 +34,9 @@ async function setupOffscreenDocument() {
 
 // --- メイン機能 ---
 
-async function testGeminiAPI(systemPrompt, userPrompt, apiKey) {
+async function generateFilenameWithGemini(systemPrompt, userPrompt, apiKey) {
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`; 
     const requestData = {
       systemInstruction: {
         parts: [{ text: systemPrompt }]
@@ -115,6 +114,11 @@ async function getPdfText(pdfData, pageCount) {
     const base64PdfData = arrayBufferToBase64(pdfData);
     chrome.runtime.sendMessage({ type: 'extract-pdf-text', base64PdfData: base64PdfData, pageCount });
   });
+}
+
+// HTMLタグを削除するヘルパー関数
+function stripHtmlTags(str) {
+  return str.replace(/<[^>]*>/g, '');
 }
 
 // Offscreen からのログを背景側に転送して見える化
@@ -202,23 +206,14 @@ chrome.action.onClicked.addListener(async (tab) => {
 
     // 3. OffscreenでPDFテキストを抽出
     const pdfText = await getPdfText(pdfData, pdfPageCount);
-    console.log('AIでファイル名を生成します...');
 
-    // 4. Gemini APIでファイル名を生成
-    console.log('System Prompt:', currentSystemPrompt); // デバッグ用にシステムプロンプトをログ出力
-    console.log('User Prompt (PDF Text):', pdfText.substring(0, 500) + '...'); // デバッグ用にユーザープロンプトの一部をログ出力
-
-    // testGeminiAPI関数を正しい引数で呼び出す
-    const aiGeneratedTitle = await testGeminiAPI(currentSystemPrompt, pdfText, apiKey);
+    // Gemini APIでファイル名を生成
+    const aiGeneratedTitle = await generateFilenameWithGemini(currentSystemPrompt, pdfText, apiKey);
 
     if (!aiGeneratedTitle || typeof aiGeneratedTitle !== 'string' || aiGeneratedTitle.trim() === '') {
       throw new Error("AIによるファイル名生成に失敗、またはファイル名が空です。");
     }
 
-    // HTMLタグを削除するヘルパー関数
-    function stripHtmlTags(str) {
-      return str.replace(/<[^>]*>/g, '');
-    }
     const cleanedTitle = stripHtmlTags(aiGeneratedTitle);
     if (cleanedTitle.trim() === '') {
       throw new Error("AIによるファイル名生成に失敗、またはファイル名が空です。");
