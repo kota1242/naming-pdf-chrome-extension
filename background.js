@@ -3,7 +3,7 @@
 // --- 定数定義 ---
 
 const OFFSCREEN_DOCUMENT_PATH = '/offscreen.html';
-const GEMINI_MODEL = 'gemini-3.1-flash-lite-preview';
+const GEMINI_MODEL = 'gemini-3.1-flash-lite';
 
 // --- Offscreen Document 管理 ---
 
