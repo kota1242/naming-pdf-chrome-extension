@@ -36,7 +36,7 @@ async function setupOffscreenDocument() {
 
 async function generateFilenameWithGemini(systemPrompt, userPrompt, apiKey) {
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`; 
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
     const requestData = {
       systemInstruction: {
         parts: [{ text: systemPrompt }]
